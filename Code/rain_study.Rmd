@@ -17,7 +17,6 @@ I'll start off by loading the needed libraries and importing the dataset
 
 ```{r libs, message=FALSE, warning=FALSE}
 library(tidyverse)
-library(GGally)
 
 data = read_csv("../input/weatherAUS.csv")
 dim(data)
