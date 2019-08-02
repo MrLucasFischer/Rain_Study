@@ -59,7 +59,7 @@ data %>%
     t()
 ```
 
-Great, nothing to alarming! We can simply remove rows with missing values and we're all set!
+Great, nothing that alarming! We can simply remove rows with missing values and we're all set!
 
 ```{r}
 data = data %>% na.exclude()
