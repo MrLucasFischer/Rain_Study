@@ -102,16 +102,45 @@ This is really important, it seems that when it rains one day it will usually ra
 
 ### Does a day with a larger amount of rain have more chance of raining the next day?
 
+```{r message=FALSE, warning=FALSE}
+data %>%
+    filter(Rainfall > 3 & Rainfall < 50) %>% 
+    ggplot(aes(x = Rainfall, fill = RainTomorrow, color = RainTomorrow)) +
+    geom_histogram(aes(y = ((..count..) / sum(..count..))), position = "identity", alpha = 0.5) +
+    scale_x_continuous(breaks = seq(0, 50, by = 5)) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.02),
+                     labels = scales::percent) +
+    labs(x = "Amount of RainFall (mm)",
+         y = "Percentage",
+         title = "Distribution of the amount of Rainfall (between 3 and 50 mm)")
+```
 
+I've filtered out the amount of rainfall a bit so we could see better, but it seems to be that when have just a bit above of 7,5 mm of rainfall in one day it's more likely to rain the next day then not to rain (looking at the data we have)
+
+Let's see if this holds true for larges amount of Rainfall
+
+```{r message=FALSE, warning=FALSE}
+data %>%
+    filter(Rainfall > 50 & Rainfall < 100) %>% 
+    ggplot(aes(x = Rainfall, fill = RainTomorrow, color = RainTomorrow)) +
+    geom_histogram(aes(y = ((..count..) / sum(..count..))), position = "identity", alpha = 0.5) +
+    scale_x_continuous(breaks = seq(0, 100, by = 5)) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.02),
+                     labels = scales::percent) +
+    labs(x = "Amount of RainFall (mm)",
+         y = "Percentage",
+         title = "Distribution of the amount of Rainfall (between 50 and 100 mm)")
+```
+So it does seem to be the case that when you have a larger amount of rain in one day it'll usually keep raining the next day (which is to be expected as storms don't usualy last just one day)
 
 ### What's the correlation between amount of Rainfall and the temperature?
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 data %>%
     filter(Rainfall > 1 & Rainfall < 100) %>% 
     ggplot(aes(x = MaxTemp, y = Rainfall, color = RainTomorrow)) +
-    #scale_x_continuous(breaks = seq(0, 35, by = 1)) +
-    #scale_y_continuous(breaks = seq(18, 65, by = 3)) +
+    scale_x_continuous(breaks = seq(0, 60, by = 2)) +
+    scale_y_continuous(breaks = seq(0, 100, by = 5)) +
     geom_point(alpha = 0.8) +
     labs(x = "Max Temperature",
          y = "Amount of Rainfall (mm)",
