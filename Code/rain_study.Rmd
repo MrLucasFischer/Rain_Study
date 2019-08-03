@@ -146,3 +146,26 @@ data %>%
          y = "Amount of Rainfall (mm)",
          title = "Max Temperature vs Amount of Rainfall")
 ```
+
+I don't really see any pattern in this data other than it seems to be a upper limit on the temperature. It seems to be unlikely that it will rain (or at least a large amount of rain) if the temperature in the previous day was above 35 degrees Celsius
+
+### What is the correlation between the humidity in the morning (or at 3pm) and the amount of rainfall?
+
+```{r message=FALSE, warning=FALSE}
+data %>%
+    filter(Rainfall > 1 & Rainfall < 100) %>% 
+    ggplot(aes(x = Humidity3pm, y = Rainfall, color = RainTomorrow)) +
+    scale_x_continuous(breaks = seq(0, 100, by = 2)) +
+    scale_y_continuous(breaks = seq(0, 100, by = 5)) +
+    geom_jitter(alpha = 0.8) +
+    labs(x = "Humidity at 3PM",
+         y = "Amount of Rainfall (mm)",
+         title = "Humidity at 3PM vs Amount of Rainfall")
+```
+
+Does gives us another usefull insight. A very humid day (80% or more) means that is more than likely to rain the following day, which might indicate that this feature might bbe useful. 
+It's interesting to point out that although the amount of rain seems to depend on the level of humidity (at 3pm), after a certain level of humidity (around 50%) it appears to have always the same efect on amount of rain. This might be due to that fact that these humidity reading is at a certain time of day and not an average of the day, but more research would be needed to conclude this.
+
+## Feature Selection
+
+We've checked some of the features and found out visually that `RainToday`, `RainFall` and possibily `Humidity3pm` are good features to use in our machine learning model
