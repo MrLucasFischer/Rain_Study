@@ -11,12 +11,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Rain Study
 
+## Introduction
+
 This is an R Markdown script containing my study on the Australian Rain dataset, which can be found [here](https://www.kaggle.com/jsphyg/weather-dataset-rattle-package).
 
 I'll start off by loading the needed libraries and importing the dataset
 
 ```{r libs, message=FALSE, warning=FALSE}
 library(tidyverse)
+library(caret)
+library(keras)
 
 data = read_csv("../input/weatherAUS.csv")
 dim(data)
@@ -62,4 +66,33 @@ Great, nothing that alarming! We can simply remove rows with missing values and 
 
 ```{r}
 data = data %>% na.exclude()
+dim(data)
 ```
+
+## Visualizations
+
+The goal of making visualizations is to try and get a more familiar sense of the data we're dealing with. We might try to answer some questions that might help us when building our machine learning/deep learning model
+
+Some questions of interest:
+
+* When it rains one day, does it normally rain the next day?
+* What is the correlation between the amount of Rainfall and the max (or min) temperature?
+* What is the correlation between the humidity in the morning (or at 3pm) and the amount of rainfall?
+
+To answer this questions we'll make a plot for each of them
+
+```{r}
+data %>%
+    ggplot(aes(x = RainToday, fill = RainTomorrow, color = RainTomorrow)) +
+    geom_bar(aes(y = ((..count..) / sum(..count..))), position = "identity", alpha = 0.5) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.05),
+                       labels = scales::percent) +
+    labs(x = "Rained Today",
+         y = "Percentage",
+         title = "Bar plot of the distribution of the RainToday variable, colorized depending if it rained the next day",
+         color = "Rained the next day",
+         fill = "Rained the next day"
+         )
+```
+
+This is really important, it seems that when it rains one day it will usually rain the next day, so it might be important to keep this variable
