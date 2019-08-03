@@ -76,10 +76,13 @@ The goal of making visualizations is to try and get a more familiar sense of the
 Some questions of interest:
 
 * When it rains one day, does it normally rain the next day?
+* Does a day with a larger amount of rain have more chance of raining the next day?
 * What is the correlation between the amount of Rainfall and the max (or min) temperature?
 * What is the correlation between the humidity in the morning (or at 3pm) and the amount of rainfall?
 
 To answer this questions we'll make a plot for each of them
+
+### When it rains one day, does it normally rain the next day?
 
 ```{r}
 data %>%
@@ -96,3 +99,21 @@ data %>%
 ```
 
 This is really important, it seems that when it rains one day it will usually rain the next day, so it might be important to keep this variable
+
+### Does a day with a larger amount of rain have more chance of raining the next day?
+
+
+
+### What's the correlation between amount of Rainfall and the temperature?
+
+```{r}
+data %>%
+    filter(Rainfall > 1 & Rainfall < 100) %>% 
+    ggplot(aes(x = MaxTemp, y = Rainfall, color = RainTomorrow)) +
+    #scale_x_continuous(breaks = seq(0, 35, by = 1)) +
+    #scale_y_continuous(breaks = seq(18, 65, by = 3)) +
+    geom_point(alpha = 0.8) +
+    labs(x = "Max Temperature",
+         y = "Amount of Rainfall (mm)",
+         title = "Max Temperature vs Amount of Rainfall")
+```
