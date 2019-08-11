@@ -54,7 +54,8 @@ For the rest of the columns we have to make some decisions. We can try to replac
 To do this we can run the exact same computation as before, just grouping by our dependent variable `RainTomorrow` (Note that I'm already removing the columns discussed before)
 
 ```{r}
-data = data %>% select(-Evaporation, -Sunshine, -Cloud9am, -Cloud3pm)
+# I'm also removing the date and location variables
+data = data %>% select(-Evaporation, -Sunshine, -Cloud9am, -Cloud3pm, -Date, -Location)
 
 data %>%
     group_by(RainTomorrow) %>%
@@ -166,29 +167,101 @@ data %>%
 This gives us another usefull insight. A very humid day (80% or more) means that is more than likely to rain the following day, which might indicate that this feature might bbe useful. 
 It's interesting to point out that although the amount of rain seems to depend on the level of humidity (at 3pm), after a certain level of humidity (around 50%) it appears to have always the same efect on amount of rain. This might be due to that fact that these humidity reading is at a certain time of day and not an average of the day, but more research would be needed to conclude this.
 
-## Feature Selection
+## Creating a neural network with `Keras`
 
-We've checked some of the features and found out visually that `RainToday`, `RainFall` and possibily `Humidity3pm` are good features to use in our machine learning model but other features might be as well. To determine which features are relevant for our model we'll use *Recursive Feature Elimination* from the `caret` package
+We've checked some of the features and found out visually that `RainToday`, `RainFall` and possibily `Humidity3pm` are good features to use in our machine learning model but other features might be as well.
+To keep this notebook relatively short I'll skip the Feature selection part and just use the 3 variables described above plus the `MaxTemp` and `Pressure3pm` variables.
+
+We start out by creating the training and test split using caret's `createDataPartition` function. We'll also want a validation set but we'll specify that in the `fit` function of `keras`
 
 ```{r}
-train_idx = createDataPartition(y = data$RainTomorrow, p = 0.8, list = F)
+# Keeping only the desired variables
+# converting RainToday to numeric
+# We're subtracting 1 for it to be between 0 and 1
+# and finnaly scaling everything except RainTomorrow and RainToday
+data_selected_features = data %>%
+    select(RainTomorrow,
+           RainToday,
+           Rainfall,
+           Humidity3pm,
+           MaxTemp,
+           Pressure3pm) %>%
+    mutate_at(vars(RainToday), ~ as.numeric(.) - 1) %>%
+    mutate_at(vars(-RainTomorrow, -RainToday), ~ as.vector(scale(.)))
 
-train_data = data[train_idx, ]
-test_data = data[-train_idx, ]
+train_idx = createDataPartition(y = data_selected_features$RainTomorrow,
+                                p = 0.8,
+                                list = F)
 
-filter_ctrl = sbfControl(
-    functions = rfSBF,
-    method = "cv",
-    number = 5,
-    verbose = T
+train_data = data_selected_features[train_idx, ]
+test_data = data_selected_features[-train_idx, ]
+
+x_train = train_data %>% select(-RainTomorrow)
+y_train = train_data$RainTomorrow
+
+x_test = test_data %>% select(-RainTomorrow)
+y_test = test_data$RainTomorrow
+
+levels(y_train) = c(0, 1)
+levels(y_test) = c(0, 1)
+
+model = keras_model_sequential()
+
+# Bulding the architecture of the network
+model %>%
+    layer_dense(units = 10,
+                input_shape = ncol(x_train),
+                name = "inputs") %>%
+    layer_activation_leaky_relu() %>%
+    
+    layer_dense(units = 128) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 128) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 256) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 126) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 64) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 32) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 10) %>%
+    layer_activation_leaky_relu() %>%
+    layer_batch_normalization() %>%
+    layer_dropout(rate = 0.5) %>%
+    
+    layer_dense(units = 1, activation = "sigmoid")
+
+
+optim = optimizer_adam(lr = 0.0008)
+model %>% compile(loss = "binary_crossentropy",
+                  optimizer = optim,
+                  metrics = c("accuracy"))
+
+model %>% fit(
+    x = as.matrix(x_train),
+    y = as.matrix(y_train),
+    epochs = 20,
+    batch_size = 128,
+    validation_split = 0.2
 )
-
-set.seed(10)
-best_features = sbf(
-    RainTomorrow ~.,
-    data = train_data,
-    sbfControl = filter_ctrl
-)
-
-best_features
 ```
