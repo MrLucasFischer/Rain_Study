@@ -88,7 +88,7 @@ To answer this questions we'll make a plot for each of them
 ```{r}
 data %>%
     ggplot(aes(x = RainToday, fill = RainTomorrow, color = RainTomorrow)) +
-    geom_bar(aes(y = ((..count..) / sum(..count..))), position = "identity", alpha = 0.5) +
+    geom_bar(aes(y = ((..count..) / sum(..count..))), position = "dodge") +
     scale_y_continuous(breaks = seq(0, 1, by = 0.05),
                        labels = scales::percent) +
     labs(x = "Rained Today",
@@ -204,7 +204,12 @@ y_test = test_data$RainTomorrow
 
 levels(y_train) = c(0, 1)
 levels(y_test) = c(0, 1)
+```
 
+Now that we have everything ready we can start building our neural network.
+I'm not going for a super heavy neural network, just some 10 epochs and a couple layers seems to achieve a good result.
+
+```{r}
 model = keras_model_sequential()
 
 # Bulding the architecture of the network
@@ -252,7 +257,7 @@ model %>%
     layer_dense(units = 1, activation = "sigmoid")
 
 
-optim = optimizer_adam(lr = 0.0008)
+optim = optimizer_rmsprop(lr = 0.0008)
 model %>% compile(loss = "binary_crossentropy",
                   optimizer = optim,
                   metrics = c("accuracy"))
@@ -260,8 +265,23 @@ model %>% compile(loss = "binary_crossentropy",
 model %>% fit(
     x = as.matrix(x_train),
     y = as.matrix(y_train),
-    epochs = 20,
-    batch_size = 128,
+    epochs = 10,
+    batch_size = 64,
     validation_split = 0.2
 )
+
+predictions_test = model %>% predict_classes(as.matrix(x_test))
+predictions_test = as.factor(predictions_test)
+
+confusionMatrix(predictions_test, y_test)
 ```
+
+So our network was able to ontain the following results:
+
+* **Accuracy** : 84.07%
+* **Precision** : 85.17%
+* **Recall** : 96.30%
+
+## Observations
+
+Apart from the feature selection, one other thing that would probably improve the model would be to either use a different metric than the accuracy or to weight the classes. This is because we have an inbalanced data set when it comes to class proportion and so using the accuracy might not be the ideal (if we had a model that it always said is not going to rain tomorrow we would have an accuracy of 88%, but that would not be to informative). We could choose a metric such as improving the Recall or the Precision but that would require some business decision to determine which type of error we would to minimize.
